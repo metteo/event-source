@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public abstract class EventSourceServlet extends HttpServlet {
+public abstract class SsEventSourceServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 2085187802346673647L;
 	
@@ -45,7 +45,7 @@ public abstract class EventSourceServlet extends HttpServlet {
 			
 	        AsyncContext context = req.startAsync();
 			@SuppressWarnings("resource")
-			EventSourceImpl es = new EventSourceImpl();
+			SsEventSourceImpl es = new SsEventSourceImpl();
 			es.open(this, context);
 		} else {
 			doRegularGet(req, resp);

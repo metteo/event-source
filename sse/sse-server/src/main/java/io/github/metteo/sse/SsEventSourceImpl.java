@@ -13,13 +13,13 @@ import javax.servlet.AsyncListener;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-class EventSourceImpl implements SsEventSource, AsyncListener {
+class SsEventSourceImpl implements SsEventSource, AsyncListener {
 
 	private String mTag;
-	private EventSourceServlet mServlet;
+	private SsEventSourceServlet mServlet;
 	private AsyncContext mContext;
 
-	void open(EventSourceServlet servlet, AsyncContext context)
+	void open(SsEventSourceServlet servlet, AsyncContext context)
 			throws IOException {
 		mServlet = servlet;
 		mContext = context;

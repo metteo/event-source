@@ -12,6 +12,7 @@
 		<module>sse-api</module>
 		<module>sse-client</module>
 		<module>sse-server</module>
+		<module>sse-sample</module>
 	</modules>
 
 	<dependencies>
