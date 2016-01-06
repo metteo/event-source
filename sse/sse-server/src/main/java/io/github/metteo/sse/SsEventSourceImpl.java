@@ -16,17 +16,21 @@ import javax.servlet.http.HttpServletResponse;
 class SsEventSourceImpl implements SsEventSource, AsyncListener {
 
 	private String mTag;
-	private SsEventSourceServlet mServlet;
+	private SsEventSourceSupport mSupport;
 	private AsyncContext mContext;
 
-	void open(SsEventSourceServlet servlet, AsyncContext context)
+	private String mLastEventId;
+
+	void open(SsEventSourceSupport support, AsyncContext context)
 			throws IOException {
-		mServlet = servlet;
+		mSupport = support;
 		mContext = context;
 		mContext.addListener(this);
+		
+		mLastEventId = getRequest().getHeader("Last-Event-ID");
 
-		mServlet.openConnections.add(this);
-		mServlet.doOpen(this);
+		mSupport.openConnections.add(this);
+		mSupport.doOpen(this);
 	}
 
 	@Override
@@ -38,10 +42,25 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 	public void setTag(String tag) {
 		mTag = tag;
 	}
+	
+	@Override
+	public String getLastEventId() {
+		return mLastEventId;
+	}
 
 	@Override
 	public boolean isOpen() {
-		return mContext != null;
+		if(mContext == null) {
+			return false;
+		}
+		
+		if(mContext.getResponse() == null) {
+			//browser disconnected, but we didn't get onComplete
+			onComplete(null);
+			return false;
+		}
+		
+		return true;
 	}
 
 	@Override
@@ -71,7 +90,7 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 
 	@Override
 	public Set<SsEventSource> getOpenConnections() {
-		return Collections.unmodifiableSet(mServlet.openConnections);
+		return Collections.unmodifiableSet(mSupport.openConnections);
 	}
 
 	private HttpServletRequest getRequest() {
@@ -98,13 +117,6 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 	
 	private PrintWriter getWriter() throws IOException {
 		HttpServletResponse resp = getResponse();
-		
-		if(resp == null) {
-			//browser disconnected, but we didn't get onComplete
-			onComplete(null);
-			throw new IllegalStateException("Connection is closed");
-		}
-		
 		PrintWriter writer = resp.getWriter();
 		return writer;
 	}
@@ -160,21 +172,21 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 	}
 
 	@Override
-	public void onComplete(AsyncEvent ae) throws IOException {
-		mServlet.doClose(this);
+	public void onComplete(AsyncEvent ae) {
+		mSupport.doClose(this);
 
 		mContext = null;
-		mServlet = null;
+		mSupport = null;
 	}
 
 	@Override
 	public void onTimeout(AsyncEvent ae) throws IOException {
-		mServlet.doTimeout(this);
+		mSupport.doTimeout(this);
 	}
 
 	@Override
 	public void onError(AsyncEvent ae) throws IOException {
-		mServlet.doError(this, ae.getThrowable());
+		mSupport.doError(this, ae.getThrowable());
 	}
 
 	@Override

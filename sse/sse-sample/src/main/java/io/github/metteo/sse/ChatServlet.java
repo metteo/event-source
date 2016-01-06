@@ -22,22 +22,23 @@ public class ChatServlet extends SsEventSourceServlet {
 	@Override
 	protected void doRegularGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		
+
 		String msg = req.getParameter("message");
-		
-		if(msg == null || msg.isEmpty()) {
+
+		if (msg == null || msg.isEmpty()) {
 			return;
 		}
 		
-        for (SsEventSource s : sQueue) {
-        	try {
-            	s.sendEvent(SsEvent.bldr().data(msg).build());
-            	sLogger.log(Level.INFO, "Message: {0}", msg);
-            
-            } catch (Exception e) {
-            	sLogger.log(Level.INFO, "Error while sending", e);
-            }
-        }
+		sLogger.log(Level.INFO, "Message: {0}", msg);
+
+		for (SsEventSource s : sQueue) {
+			try {
+				s.sendEvent(SsEvent.bldr().data(msg).build());
+
+			} catch (Exception e) {
+				sLogger.log(Level.INFO, "Error while sending", e);
+			}
+		}
 	}
 	
 	@Override
