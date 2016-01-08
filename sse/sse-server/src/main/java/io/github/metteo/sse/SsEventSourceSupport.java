@@ -36,16 +36,16 @@ public class SsEventSourceSupport {
 	// header Last-Event-ID is sent on reconnect - it allows to catch up after
 	// connection was lost
 
-	public void process(HttpServletRequest req,
+	public SsEventSource process(HttpServletRequest req,
 			HttpServletResponse resp) throws ServletException {
 		try {
-			process0(req, resp);
+			return process0(req, resp);
 		} catch (IOException e) {
 			throw new ServletException(e);
 		}
 	}
 
-	private void process0(HttpServletRequest req,
+	private SsEventSource process0(HttpServletRequest req,
 			HttpServletResponse resp) throws IOException {
 		
 		boolean eventStream = isEventStream(req);
@@ -59,10 +59,13 @@ public class SsEventSourceSupport {
 			resp.flushBuffer();
 
 			AsyncContext context = req.startAsync();
-			@SuppressWarnings("resource")
 			SsEventSourceImpl es = new SsEventSourceImpl();
 			es.open(this, context);
+			
+			return es;
 		}
+		
+		return null;
 	}
 
 	public boolean isEventStream(HttpServletRequest req) {
