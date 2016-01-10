@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
@@ -11,9 +15,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class SsEventSourceSupport {
+	
+	private static final Logger sLogger = Logger.getLogger("SsEventSourceSupport");
 
 	protected Set<SsEventSource> openConnections = Collections
 			.synchronizedSet(new HashSet<SsEventSource>());
+	
+	private Timer mTimer = new Timer();
 	
 	private SsEventSourceListener mOpenListener;
 	private SsEventSourceListener mTimeoutListener;
@@ -73,6 +81,12 @@ public class SsEventSourceSupport {
 		boolean eventStream = "text/event-stream".equals(accept);
 		return eventStream;
 	}
+	
+	protected Heartbeat setHeartbeat(SsEventSource es, long heartbeatMs) {
+		Heartbeat hb = new Heartbeat(es);
+		mTimer.scheduleAtFixedRate(hb, heartbeatMs, heartbeatMs);
+		return hb;
+	}
 
 	protected void doOpen(SsEventSource eventSource) {
 		if(mOpenListener != null) mOpenListener.onEvent(eventSource);
@@ -105,5 +119,26 @@ public class SsEventSourceSupport {
 	
 	public void setCloseListener(SsEventSourceListener l) {
 		mCloseListener = l;
+	}
+	
+	static class Heartbeat extends TimerTask {
+		
+		private SsEventSource mEventSource;
+		
+		public Heartbeat(SsEventSource es) {
+			mEventSource = es;
+		}
+		
+		@Override
+		public void run() {
+			if(mEventSource.isOpen()) {
+				try {
+					mEventSource.sendComment("hb");
+				} catch (IOException e) {
+					//probably closed connection
+					sLogger.log(Level.FINEST, "Unable to sendComment", e);
+				}
+			}
+		}
 	}
 }

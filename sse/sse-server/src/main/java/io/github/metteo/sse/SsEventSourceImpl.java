@@ -1,11 +1,15 @@
 package io.github.metteo.sse;
 
+import io.github.metteo.sse.SsEventSourceSupport.Heartbeat;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncEvent;
@@ -14,10 +18,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 class SsEventSourceImpl implements SsEventSource, AsyncListener {
+	
+	private static final Logger sLogger = Logger.getLogger("SsEventSourceSupport");
 
 	private String mTag;
 	private SsEventSourceSupport mSupport;
 	private AsyncContext mContext;
+	private Heartbeat mHeartbeat;
 
 	private String mLastEventId;
 
@@ -106,12 +113,8 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 			getResponse().flushBuffer();
 		} catch (IOException e) {
 			// probably closed connection
-			try {
-				close();
-			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+			sLogger.log(Level.FINEST, "Unable to flush", e);
+			onComplete(null);
 		}
 	}
 	
@@ -122,48 +125,44 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 	}
 
 	@Override
-	public void sendEvent(SsEvent event) {
+	public void sendEvent(SsEvent event) throws IOException {
 		if(!isOpen()) {
 			throw new IllegalStateException("Connection is closed");
 		}
-		
-		try {
-			PrintWriter writer = getWriter();
-			writer.print(event.toText());
-			writer.print("\n");
-			flush();
-		} catch (IOException e) {
-			//TODO: what to do with exception
-			e.printStackTrace();
-		}
+
+		PrintWriter writer = getWriter();
+		writer.print(event.toText());
+		writer.print("\n");
+		flush();
 	}
 
 	@Override
-	public void sendComment(String comment) {
+	public void sendComment(String comment) throws IOException {
 		if(!isOpen()) {
 			throw new IllegalStateException("Connection is closed");
 		}
-		
-		try {
-			PrintWriter writer = getWriter();
-			writer.print(": " + comment + "\n");
-			writer.print("\n");
-			flush();
-		} catch (IOException e) {
-			//TODO: what to do with exception
-			e.printStackTrace();
-		}
+
+		PrintWriter writer = getWriter();
+		writer.print(": " + comment + "\n");
+		writer.print("\n");
+		flush();
 	}
 
 	@Override
-	public void setRetry(int retry) {
+	public void setRetry(int retry) throws IOException {
 		sendEvent(SsEvent.bldr().retry(retry).build());
 	}
 
 	@Override
-	public void setHeartbeat(int ms) {
-		// TODO Auto-generated method stub
-
+	public void setHeartbeat(long ms) {
+		if(mHeartbeat != null) {
+			mHeartbeat.cancel();
+			mHeartbeat = null;
+		}
+		
+		if(ms > 0) {
+			mHeartbeat = mSupport.setHeartbeat(this, ms);
+		}
 	}
 	
 	@Override
@@ -174,6 +173,10 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 	@Override
 	public void onComplete(AsyncEvent ae) {
 		mSupport.doClose(this);
+		if(mHeartbeat != null) {
+			mHeartbeat.cancel();
+			mHeartbeat = null;
+		}
 
 		mContext = null;
 		mSupport = null;

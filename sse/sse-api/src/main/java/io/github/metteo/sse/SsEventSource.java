@@ -33,21 +33,21 @@ public interface SsEventSource extends Closeable {
 	
 	Set<SsEventSource> getOpenConnections();
 	
-	void sendEvent(SsEvent event);
+	void sendEvent(SsEvent event) throws IOException;
 	
-	void sendComment(String comment);
+	void sendComment(String comment) throws IOException;
 	
 	/**
 	 * Reconnect from client
 	 * @param retryMs
 	 */
-	void setRetry(int retryMs);
+	void setRetry(int retryMs) throws IOException;
 	
 	/**
 	 * Heartbeat to keep the connection
 	 * @param heartbeatMs
 	 */
-	void setHeartbeat(int heartbeatMs);
+	void setHeartbeat(long heartbeatMs);
 	
 	/**
 	 * Sets Servlet async op timeout, 0 means no timeout

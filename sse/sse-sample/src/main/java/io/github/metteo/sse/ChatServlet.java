@@ -34,7 +34,6 @@ public class ChatServlet extends SsEventSourceServlet {
 		for (SsEventSource s : sQueue) {
 			try {
 				s.sendEvent(SsEvent.bldr().data(msg).build());
-
 			} catch (Exception e) {
 				sLogger.log(Level.INFO, "Error while sending", e);
 			}
@@ -43,6 +42,9 @@ public class ChatServlet extends SsEventSourceServlet {
 	
 	@Override
 	protected void onOpen(SsEventSource eventSource) {
+		eventSource.setTimeout(0);
+		eventSource.setHeartbeat(10000);
+		
 		sQueue.add(eventSource);
 	}
 
