@@ -12,6 +12,10 @@
 	<groupId>io.github.metteo.sse</groupId>
 	<artifactId>sse-sample</artifactId>
 	<packaging>war</packaging>
+	
+	<properties>
+		<failOnMissingWebXml>false</failOnMissingWebXml>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -26,4 +30,5 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
+	
 </project>

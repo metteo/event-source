@@ -1,5 +1,5 @@
 if (typeof (EventSource) !== "undefined") {
-	var source = new EventSource("http://localhost:8080/sse-sample/chat");
+	var source = new EventSource(location.href + "/chat");
 	source.onmessage = function(event) {
 		document.getElementById("chat").innerHTML += event.data + "<br>";
 		console.log(event);
