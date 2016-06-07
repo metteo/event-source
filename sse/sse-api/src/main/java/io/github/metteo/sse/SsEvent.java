@@ -29,11 +29,6 @@ public abstract class SsEvent implements Serializable {
 
 		public SsEvent build() {
 			SsEvent sse = autoBuild();
-
-			String id = sse.getId();
-			if (id != null && id.isEmpty()) {
-				throw new IllegalStateException("ID can't be empty");
-			}
 			
 			String event = sse.getEvent();
 			if (event != null && event.isEmpty()) {
