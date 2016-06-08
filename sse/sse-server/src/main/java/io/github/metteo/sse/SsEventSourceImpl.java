@@ -1,6 +1,8 @@
 package io.github.metteo.sse;
 
 import io.github.metteo.sse.SsEventSourceSupport.Heartbeat;
+import io.github.metteo.sse.io.SsEventStreamWriter;
+import io.github.metteo.sse.io.SsEventStreamWriterImpl;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -23,6 +25,7 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 
 	private String mTag;
 	private SsEventSourceSupport mSupport;
+	private SsEventStreamWriter mWriter;
 	private AsyncContext mContext;
 	private Heartbeat mHeartbeat;
 
@@ -38,8 +41,11 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 
 		mSupport.openConnections.add(this);
 		mSupport.doOpen(this);
+		
+		mWriter = new SsEventStreamWriterImpl();
 	}
 
+	//instead of tagging make use of HttpSession since sse are already stateful
 	@Override
 	public String getTag() {
 		return mTag;
@@ -124,6 +130,7 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 		return writer;
 	}
 
+	//TODO: implement queue of events, and this just adds event to that queue?
 	@Override
 	public void sendEvent(SsEvent event) throws IOException {
 		if(!isOpen()) {
@@ -131,8 +138,9 @@ class SsEventSourceImpl implements SsEventSource, AsyncListener {
 		}
 
 		PrintWriter writer = getWriter();
-		writer.print(event.toText());
-		writer.print("\n");
+		mWriter.setWriter(writer);
+		mWriter.write(event);
+		mWriter.setWriter(null); //do not hold on to the reference
 		flush();
 	}
 

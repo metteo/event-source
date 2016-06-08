@@ -85,37 +85,6 @@ public abstract class SsEvent implements Serializable {
 	 */
 	@Nullable
 	public abstract Integer getRetry();
-
-	/**
-	 * Text representation of the event ready to be pushed to the client
-	 * @return
-	 */
-	public String toText() {
-		StringBuilder sb = new StringBuilder();
-		
-		String id = getId();
-		if(id != null) {
-			sb.append("id: " + id + "\n");
-		}
-		
-		String event = getEvent();
-		if(event != null && !"message".equals(event)) {
-			sb.append("event: " + event + "\n");
-		}
-		
-		String data = getData();
-		if(data != null) {
-			//TODO: add 'data: ' prefix after every new line in data
-			sb.append("data: " + data + "\n");
-		}
-		
-		Integer retry = getRetry();
-		if(retry != null) {
-			sb.append("retry: " + retry + "\n");
-		}
-		
-		return sb.toString();
-	}
 	
 	/**
 	 * Builder instance initialized with values from this event
